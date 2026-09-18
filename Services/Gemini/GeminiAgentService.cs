@@ -56,7 +56,7 @@ public class GeminiAgentService
         _logger.LogInformation($"Using {(isGroq ? "Groq" : "Gemini")} API endpoint.");
 
         var geminiModel = _configuration["GEMINI_MODEL"] ?? Environment.GetEnvironmentVariable("GEMINI_MODEL") ?? "gemini-2.0-flash";
-        var groqModel = _configuration["GROQ_MODEL"] ?? Environment.GetEnvironmentVariable("GROQ_MODEL") ?? "llama-3.1-8b-instant";
+        var groqModel = _configuration["GROQ_MODEL"] ?? Environment.GetEnvironmentVariable("GROQ_MODEL") ?? "openai/gpt-oss-120b";
 
         try
         {
