@@ -49,15 +49,25 @@ public static class AuthEndpoints
                 return Results.BadRequest(new { error = "Username and password must be provided." });
             }
 
-            var user = await db.Users.FirstOrDefaultAsync(u => 
-                u.Username.ToLower() == request.Username.ToLower() && u.Password == request.Password);
-                
-            if (user == null)
+            try
             {
-                return Results.BadRequest(new { error = "Invalid username or password." });
-            }
+                var user = await db.Users.FirstOrDefaultAsync(u => 
+                    u.Username.ToLower() == request.Username.ToLower() && u.Password == request.Password);
+                    
+                if (user == null)
+                {
+                    return Results.BadRequest(new { error = "Invalid username or password." });
+                }
 
-            return Results.Ok(new { success = true, username = user.Username, role = user.Role.ToString() });
+                return Results.Ok(new { success = true, username = user.Username, role = user.Role.ToString() });
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem(
+                    detail: $"Database connection error: {ex.Message}. Please ensure PostgreSQL is running and DATABASE_URL is configured.",
+                    statusCode: 500
+                );
+            }
         });
     }
 }
