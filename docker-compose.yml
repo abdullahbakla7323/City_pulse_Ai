@@ -1,0 +1,56 @@
+# ==============================================
+# CityPulse AI - Docker Compose
+# Runs the app + PostgreSQL/PostGIS together
+# ==============================================
+
+services:
+
+  # ── PostgreSQL + PostGIS ───────────────────
+  db:
+    image: postgis/postgis:17-3.5-alpine
+    container_name: citypulse_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: citypulse
+      POSTGRES_USER: citypulse_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-citypulse_secret}
+    ports:
+      - "5432:5432"
+    volumes:
+      - citypulse_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U citypulse_user -d citypulse"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── CityPulse AI Backend ───────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: citypulse_app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # PostgreSQL Connection (points to 'db' service above)
+      DATABASE_URL: "Host=db;Database=citypulse;Username=citypulse_user;Password=${DB_PASSWORD:-citypulse_secret};SSL Mode=Disable"
+      # Groq API Key
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      ASPNETCORE_ENVIRONMENT: Production
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - citypulse_uploads:/app/wwwroot/uploads
+      - citypulse_reports:/app/wwwroot/temp_reports
+
+# ── Named Volumes ──────────────────────────
+volumes:
+  citypulse_pgdata:
+    driver: local
+  citypulse_uploads:
+    driver: local
+  citypulse_reports:
+    driver: local

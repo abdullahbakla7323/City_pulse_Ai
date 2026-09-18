@@ -1,0 +1,86 @@
+## ==============================================
+## CityPulse AI - .gitignore
+## .NET 10 + PostgreSQL + Photino Desktop App
+## ==============================================
+
+# ──────────────────────────────────────────────
+# 🔐 SECRETS & ENVIRONMENT (NEVER COMMIT THESE)
+# ──────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
+*.key
+secrets.json
+appsettings.Production.json
+appsettings.Secrets.json
+
+# ──────────────────────────────────────────────
+# .NET Build Output
+# ──────────────────────────────────────────────
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+*.userprefs
+
+# ──────────────────────────────────────────────
+# NuGet Packages
+# ──────────────────────────────────────────────
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# ──────────────────────────────────────────────
+# Runtime / Temp Files
+# ──────────────────────────────────────────────
+wwwroot/temp_reports/
+wwwroot/uploads/
+*.log
+*.tmp
+*.temp
+
+# ──────────────────────────────────────────────
+# OS Specific
+# ──────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+Desktop.ini
+.local/
+Library/
+
+# ──────────────────────────────────────────────
+# IDE & Editors
+# ──────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ──────────────────────────────────────────────
+# Test Results
+# ──────────────────────────────────────────────
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# ──────────────────────────────────────────────
+# Docker
+# ──────────────────────────────────────────────
+.dockerignore

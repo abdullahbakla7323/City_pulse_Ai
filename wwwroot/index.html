@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CityPulse AI - Smart City Management Platform</title>
+    
+    <!-- Premium Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Local Leaflet.js Map CSS -->
+    <link rel="stylesheet" href="lib/leaflet/leaflet.css">
+    
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom Glassmorphic Dark Style -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- 1. Authentication Screen Overlay (Login/Register) -->
+    <div id="auth-overlay" class="auth-overlay">
+        <div class="auth-box">
+            <div class="auth-header">
+                <i class="fa-solid fa-city glow-icon"></i>
+                <h2>CityPulse <span>AI</span></h2>
+                <p>Smart City Management Automation</p>
+            </div>
+            
+            <!-- Login Form -->
+            <form id="login-form" class="auth-form">
+                <h3>Sign In</h3>
+                <div class="form-group">
+                    <label for="login-username"><i class="fa-solid fa-user"></i> Username</label>
+                    <input type="text" id="login-username" placeholder="Enter your username..." required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password"><i class="fa-solid fa-lock"></i> Password</label>
+                    <input type="password" id="login-password" placeholder="Enter your password..." required>
+                </div>
+                <div class="error-msg" id="login-error"></div>
+                <button type="submit" class="auth-btn">Sign In</button>
+                
+                <div class="default-credentials">
+                    <p>Demo Accounts (Username / Password):</p>
+                    <ul>
+                        <li>Admin: <code>admin</code> / <code>adminpassword</code></li>
+                        <li>Citizen: <code>citizen</code> / <code>userpassword</code></li>
+                        <li>Dispatcher: <code>dispatcher</code> / <code>dispatcherpassword</code></li>
+                    </ul>
+                </div>
+                
+                <p class="switch-p">Don't have an account? <a href="#" id="switch-to-register">Sign Up</a></p>
+            </form>
+
+            <!-- Register Form -->
+            <form id="register-form" class="auth-form hidden">
+                <h3>Sign Up</h3>
+                <div class="form-group">
+                    <label for="register-username"><i class="fa-solid fa-user"></i> Username</label>
+                    <input type="text" id="register-username" placeholder="Choose a username..." required>
+                </div>
+                <div class="form-group">
+                    <label for="register-password"><i class="fa-solid fa-lock"></i> Password</label>
+                    <input type="password" id="register-password" placeholder="Choose a password..." required>
+                </div>
+                <div class="form-group">
+                    <label for="register-role"><i class="fa-solid fa-user-shield"></i> Role</label>
+                    <select id="register-role">
+                        <option value="2">Citizen</option>
+                        <option value="0">Admin</option>
+                        <option value="1">Dispatcher</option>
+                    </select>
+                </div>
+                <div class="error-msg" id="register-error"></div>
+                <button type="submit" class="auth-btn">Sign Up</button>
+                <p class="switch-p">Already have an account? <a href="#" id="switch-to-login">Sign In</a></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Main App View (Hidden until Auth succeeds) -->
+    <div class="app-container chat-collapsed hidden" id="app-main">
+        
+        <!-- Sidebar: AI Assistant Chat Area -->
+        <aside class="sidebar-chat">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fa-solid fa-city glow-icon"></i>
+                    <h1>CityPulse <span>AI</span></h1>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="connection-status" id="ws-status">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Connecting...</span>
+                    </div>
+                    <button type="button" id="btn-collapse-chat" class="collapse-chat-btn" onclick="toggleChatSidebar(false)" title="Close Chat">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- User Session Indicator -->
+            <div class="user-session" id="user-session">
+                <div class="user-info">
+                    <i class="fa-solid fa-circle-user"></i>
+                    <span id="session-username">Not Signed In</span>
+                    <span class="role-badge" id="session-role">Citizen</span>
+                </div>
+                <button id="btn-logout" title="Sign Out">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </div>
+            
+            <div class="chat-messages" id="chat-messages">
+                <div class="message system">
+                    <div class="avatar"><i class="fa-solid fa-robot"></i></div>
+                    <div class="message-content">
+                        <strong>CityPulse AI Assistant</strong>
+                        <p id="assistant-welcome">Hello! I am your CityPulse AI urban management assistant. I am here to help you coordinate and solve city issues.</p>
+                        <span class="time">Just now</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chat-input-area">
+                <div class="chat-suggestions" id="chat-suggestions-container">
+                    <!-- Suggestions will be injected depending on role -->
+                </div>
+                <!-- File Attachment Preview Area -->
+                <div id="chat-attachment-preview" class="chat-attachment-preview hidden"></div>
+                
+                <form id="chat-form" class="input-form">
+                    <input type="file" id="chat-file-input" accept="image/*,video/*" style="display: none;">
+                    <input type="text" id="chat-input" placeholder="Give instructions to AI assistant..." autocomplete="off">
+                    <button type="button" id="chat-attach-btn" class="attach-btn" title="Upload Media">
+                        <i class="fa-solid fa-paperclip"></i>
+                    </button>
+                    <button type="submit" class="send-btn">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </aside>
+
+        <!-- Main Content Area: Map and Floating Widgets -->
+        <main class="main-map-area">
+            <!-- Map Container -->
+            <div id="map"></div>
+
+            <!-- Floating AI Assistant Trigger Badge -->
+            <div id="chat-trigger" class="chat-trigger" onclick="toggleChatSidebar(true)" title="Open AI Assistant">
+                <div class="chat-trigger-bubble">I'm here for all your city needs!</div>
+                <div class="chat-trigger-avatar">
+                    <i class="fa-solid fa-robot"></i>
+                    <div class="chat-thinking-indicator" title="Thinking...">
+                        <i class="fa-solid fa-cog fa-spin"></i>
+                    </div>
+                    <div class="chat-trigger-glow"></div>
+                </div>
+            </div>
+
+            <!-- Departments View Container -->
+            <div id="departments-view" class="departments-view hidden">
+                <div class="departments-actions-bar" style="display: flex; justify-content: flex-end; margin-bottom: 20px; padding: 0 20px;">
+                    <button class="control-btn" id="btn-open-budget-transfer" onclick="openBudgetTransfer()" style="background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.4); color: #c084fc; box-shadow: 0 0 10px rgba(168, 85, 247, 0.1);">
+                        <i class="fa-solid fa-money-bill-transfer"></i> Transfer Budget
+                    </button>
+                </div>
+                <div class="departments-grid" id="departments-grid">
+                    <!-- Dynamic cards injected by JS -->
+                </div>
+            </div>
+
+            <!-- Department Details Modal/Overlay -->
+            <div id="dept-details-modal" class="dept-details-modal hidden">
+                <div class="dept-details-content">
+                    <!-- Content dynamically generated by JS -->
+                </div>
+            </div>
+
+            <!-- Budget Transfer Modal -->
+            <div id="budget-transfer-modal" class="dept-details-modal hidden">
+                <div class="dept-details-content" style="max-width: 500px; height: auto; min-height: auto; padding: 25px;">
+                    <div class="dept-details-header">
+                        <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.4rem; color: var(--text-primary); margin: 0;">
+                            <i class="fa-solid fa-money-bill-transfer text-purple"></i> Budget Transfer System
+                        </h2>
+                        <button class="dept-details-close-btn" onclick="closeBudgetTransfer()"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <form id="budget-transfer-form" style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
+                        <div class="form-group">
+                            <label for="transfer-from"><i class="fa-solid fa-wallet text-danger"></i> Source Department (Deduct From)</label>
+                            <select id="transfer-from" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="transfer-to"><i class="fa-solid fa-wallet text-success"></i> Target Department (Transfer To)</label>
+                            <select id="transfer-to" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="transfer-amount"><i class="fa-solid fa-dollar-sign text-cyan"></i> Transfer Amount ($)</label>
+                            <input type="number" id="transfer-amount" min="1" step="100" placeholder="Enter amount..." required>
+                        </div>
+                        <div id="transfer-error" class="error-msg" style="margin-bottom: 0;"></div>
+                        <button type="submit" class="auth-btn" style="background: linear-gradient(135deg, #a855f7, #7c3aed); border-color: transparent; box-shadow: 0 0 10px rgba(168, 85, 247, 0.4); margin-top: 10px;">
+                            Confirm Transfer
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Floating Top Navigation / Header -->
+            <header class="floating-header">
+                <div class="header-info">
+                    <h2>CityPulse AI - Smart City Management Platform</h2>
+                    <p id="header-desc">Real-Time Spatial GIS Tracking and AI Dispatch Orchestration</p>
+                </div>
+                <div class="header-actions">
+                    <button class="control-btn" id="btn-autopilot" onclick="toggleAutopilot()" style="display: none;">
+                        <i class="fa-solid fa-robot"></i> AI Auto-Pilot: <span id="autopilot-status-lbl">OFF</span>
+                    </button>
+                    <button class="control-btn active" id="btn-view-map">
+                        <i class="fa-solid fa-map"></i> Map View
+                    </button>
+                    <button class="control-btn" id="btn-view-departments">
+                        <i class="fa-solid fa-building-shield"></i> City Departments
+                    </button>
+                    <button class="control-btn" id="btn-reset-data" title="Refresh Map and System Data">
+                        <i class="fa-solid fa-arrows-rotate"></i> Refresh Data
+                    </button>
+                </div>
+            </header>
+
+            <!-- Floating Right Panel: Stats and Operations Log -->
+            <section class="floating-widgets">
+                <!-- Toggle Button to Slide Sidebar in/out -->
+                <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" title="Toggle Panel">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+                
+                <!-- ADMIN / DISPATCHER UI PANEL -->
+                <div id="panel-admin" class="role-panel">
+                    <!-- Stat Cards -->
+                    <div class="widget-panel stats-grid">
+                        <div class="stat-card">
+                            <i class="fa-solid fa-circle-exclamation text-amber"></i>
+                            <div class="stat-val" id="stat-active-incidents">0</div>
+                            <div class="stat-label">Active Incidents</div>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fa-solid fa-truck-pickup text-cyan"></i>
+                            <div class="stat-val" id="stat-idle-crews">0</div>
+                            <div class="stat-label">Idle Crews</div>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fa-solid fa-circle-check text-green"></i>
+                            <div class="stat-val" id="stat-resolved-incidents">0</div>
+                            <div class="stat-label">Resolved Incidents</div>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fa-solid fa-wallet text-purple"></i>
+                            <div class="stat-val" id="stat-budget">$0</div>
+                            <div class="stat-label">Budget Spent</div>
+                        </div>
+                    </div>
+
+                    <!-- Active Dispatch Tracking Widget -->
+                    <div class="widget-panel dispatch-tracking-panel" id="dispatch-tracking-panel" style="display: none; margin-bottom: 15px;">
+                        <h3><i class="fa-solid fa-location-crosshairs pulse-icon text-cyan"></i> Live Crew Dispatch</h3>
+                        <div class="dispatch-tracking-container" id="dispatch-tracking-container" style="display: flex; flex-direction: column; gap: 10px;">
+                            <!-- Injected dynamically by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Live Logs / Feed -->
+                    <div class="widget-panel logs-panel">
+                        <h3><i class="fa-solid fa-satellite-dish pulse-icon"></i> Live Operations Feed</h3>
+                        <div class="logs-container" id="logs-container">
+                            <div class="log-entry">
+                                <span class="log-time">System</span>
+                                <span class="log-text">Application initialized successfully. Listening for signals...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CITIZEN (USER) UI PANEL -->
+                <div id="panel-citizen" class="role-panel hidden">
+                    <!-- Instructions Widget -->
+                    <div class="widget-panel citizen-instructions">
+                        <h3><i class="fa-solid fa-map-location-dot"></i> How to Report an Incident?</h3>
+                        <p>1. Chat with the AI Assistant on the left (e.g. <i>"Sewer overflow on Main Avenue"</i>).</p>
+                        <p>2. Or <strong>click directly on the map</strong> to report an incident at that exact location.</p>
+                    </div>
+
+                    <!-- My Incidents Feed -->
+                    <div class="widget-panel citizen-incidents">
+                        <h3><i class="fa-solid fa-clipboard-list"></i> My Reported Incidents</h3>
+                        <div class="citizen-incidents-list" id="citizen-incidents-list">
+                            <div class="empty-feed-text">You have not reported any incidents yet.</div>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+    </div>
+
+    <!-- Toast notifications container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Media Lightbox Modal -->
+    <div id="media-lightbox" class="media-lightbox hidden" onclick="closeLightbox()">
+        <button class="lightbox-close-btn" onclick="closeLightbox()"><i class="fa-solid fa-xmark"></i></button>
+        <div class="lightbox-content" onclick="event.stopPropagation()">
+            <!-- Image or Video will be injected here -->
+        </div>
+    </div>
+
+    <!-- Local Leaflet.js Map Library -->
+    <script src="lib/leaflet/leaflet.js"></script>
+    
+    <!-- Local SignalR Client Library -->
+    <script src="lib/signalr/signalr.min.js"></script>
+    
+    <!-- Custom Operations Javascript -->
+    <script src="js/app.js"></script>
+</body>
+</html>
