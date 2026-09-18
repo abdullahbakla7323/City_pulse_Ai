@@ -21,11 +21,15 @@ public class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        // 1. Load Environment Variables from .env file (traverse parent directories to find root .env)
+        try
+        {
+            DotNetEnv.Env.TraversePath().Load();
+        }
+        catch { }
+
         // Set working directory to the executable's directory so relative paths work when launched from Finder/Desktop
         Directory.SetCurrentDirectory(AppContext.BaseDirectory);
-
-        // 1. Load Environment Variables from .env file
-        DotNetEnv.Env.Load();
 
         var builder = WebApplication.CreateBuilder(args);
 
