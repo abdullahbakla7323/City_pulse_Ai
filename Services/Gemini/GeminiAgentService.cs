@@ -49,6 +49,41 @@ public class GeminiAgentService
 
         if (string.IsNullOrWhiteSpace(apiKey) || apiKey == "YOUR_GEMINI_API_KEY_HERE" || apiKey == "YOUR_GROQ_API_KEY_HERE")
         {
+            try
+            {
+                var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                var candidates = new[]
+                {
+                    Path.Combine(AppContext.BaseDirectory, ".env"),
+                    Path.Combine(home, "Desktop", "CityPulseAI", ".env"),
+                    Path.Combine(Directory.GetCurrentDirectory(), ".env"),
+                    Path.Combine(home, ".env")
+                };
+
+                foreach (var candidate in candidates)
+                {
+                    if (File.Exists(candidate))
+                    {
+                        foreach (var line in File.ReadAllLines(candidate))
+                        {
+                            var trimmed = line.Trim();
+                            if (trimmed.StartsWith("GEMINI_API_KEY=") || trimmed.StartsWith("GROQ_API_KEY="))
+                            {
+                                apiKey = trimmed.Substring(trimmed.IndexOf('=') + 1).Trim().Trim('"').Trim('\'');
+                                if (!string.IsNullOrWhiteSpace(apiKey) && apiKey != "YOUR_GEMINI_API_KEY_HERE" && apiKey != "YOUR_GROQ_API_KEY_HERE")
+                                    break;
+                            }
+                        }
+                    }
+                    if (!string.IsNullOrWhiteSpace(apiKey) && apiKey != "YOUR_GEMINI_API_KEY_HERE" && apiKey != "YOUR_GROQ_API_KEY_HERE")
+                        break;
+                }
+            }
+            catch { }
+        }
+
+        if (string.IsNullOrWhiteSpace(apiKey) || apiKey == "YOUR_GEMINI_API_KEY_HERE" || apiKey == "YOUR_GROQ_API_KEY_HERE")
+        {
             return "API Key was not found (.env file should contain GEMINI_API_KEY or GROQ_API_KEY). Please check your configuration.";
         }
 

@@ -21,10 +21,37 @@ public class Program
     [STAThread]
     public static void Main(string[] args)
     {
-        // 1. Load Environment Variables from .env file (traverse parent directories to find root .env)
+        // 1. Load Environment Variables from multiple possible locations (App Bundle, Current Dir, Desktop, Traverse)
         try
         {
-            DotNetEnv.Env.TraversePath().Load();
+            var baseDir = AppContext.BaseDirectory;
+            var currentDir = Directory.GetCurrentDirectory();
+            var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            var desktopDir = Path.Combine(homeDir, "Desktop", "CityPulseAI");
+
+            var potentialPaths = new[]
+            {
+                Path.Combine(baseDir, ".env"),
+                Path.Combine(currentDir, ".env"),
+                Path.Combine(desktopDir, ".env"),
+                Path.Combine(homeDir, ".env")
+            };
+
+            bool loaded = false;
+            foreach (var path in potentialPaths)
+            {
+                if (File.Exists(path))
+                {
+                    DotNetEnv.Env.Load(path);
+                    loaded = true;
+                    break;
+                }
+            }
+
+            if (!loaded)
+            {
+                try { DotNetEnv.Env.TraversePath().Load(); } catch { }
+            }
         }
         catch { }
 
