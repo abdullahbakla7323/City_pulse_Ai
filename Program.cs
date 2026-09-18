@@ -38,7 +38,7 @@ public class Program
         // 2. Configure Database Context (PostgreSQL + PostGIS spatial mapping)
         var connectionString = builder.Configuration["DATABASE_URL"] 
                                ?? Environment.GetEnvironmentVariable("DATABASE_URL")
-                               ?? "Host=localhost;Database=citypulse;Username=postgres;Password=;SSL Mode=Prefer;Trust Server Certificate=true";
+                               ?? "Host=localhost;Database=citypulse;Username=citypulse_user;Password=citypulse_secret;SSL Mode=Prefer;Trust Server Certificate=true";
 
         builder.Services.AddDbContext<AppDbContext>(options =>
             options.UseNpgsql(connectionString, o => o.UseNetTopologySuite()));
