@@ -55,11 +55,14 @@ public class GeminiAgentService
         bool isGroq = apiKey.StartsWith("gsk_");
         _logger.LogInformation($"Using {(isGroq ? "Groq" : "Gemini")} API endpoint.");
 
+        var geminiModel = _configuration["GEMINI_MODEL"] ?? Environment.GetEnvironmentVariable("GEMINI_MODEL") ?? "gemini-2.0-flash";
+        var groqModel = _configuration["GROQ_MODEL"] ?? Environment.GetEnvironmentVariable("GROQ_MODEL") ?? "llama-3.1-8b-instant";
+
         try
         {
             var url = isGroq 
                 ? "https://api.groq.com/openai/v1/chat/completions"
-                : $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={apiKey}";
+                : $"https://generativelanguage.googleapis.com/v1beta/models/{geminiModel}:generateContent?key={apiKey}";
 
             using var request = new HttpRequestMessage(HttpMethod.Post, url);
             
@@ -69,7 +72,7 @@ public class GeminiAgentService
             }
 
             var requestBody = isGroq 
-                ? BuildGroqRequestPayload(userMessage)
+                ? BuildGroqRequestPayload(userMessage, groqModel)
                 : BuildGeminiRequestPayload(userMessage);
 
             request.Content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
@@ -150,7 +153,7 @@ public class GeminiAgentService
                 }
 
                 var summaryPayload = isGroq
-                    ? BuildGroqSummaryPayload(userMessage, toolCallId, functionName, executionResult)
+                    ? BuildGroqSummaryPayload(userMessage, toolCallId, functionName, executionResult, groqModel)
                     : BuildGeminiSummaryPayload(userMessage, functionName, executionResult);
 
                 summaryRequest.Content = new StringContent(JsonSerializer.Serialize(summaryPayload), Encoding.UTF8, "application/json");
@@ -716,11 +719,11 @@ public class GeminiAgentService
         };
     }
 
-    private object BuildGroqRequestPayload(string userMessage)
+    private object BuildGroqRequestPayload(string userMessage, string modelName)
     {
         return new
         {
-            model = "llama-3.3-70b-versatile",
+            model = modelName,
             messages = new object[]
             {
                 new {
@@ -834,11 +837,11 @@ public class GeminiAgentService
         };
     }
 
-    private object BuildGroqSummaryPayload(string userMessage, string toolCallId, string functionName, string executionResult)
+    private object BuildGroqSummaryPayload(string userMessage, string toolCallId, string functionName, string executionResult, string modelName)
     {
         return new
         {
-            model = "llama-3.3-70b-versatile",
+            model = modelName,
             messages = new object[]
             {
                 new {
